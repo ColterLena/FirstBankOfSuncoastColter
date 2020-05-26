@@ -63,7 +63,7 @@ namespace FirstBankOfSuncoastColter
             }
 
             Console.WriteLine();
-            Console.WriteLine("Welcome John Doe to your bank account management system at the First Bank of Suncoast. Please select one of the following options. ");
+            Console.WriteLine($"Welcome John Doe to your bank account management system at the First Bank of Suncoast. Your current Checking Account balance is ${johnDoe.CheckingAccountBalance} and your current Savings Account balance is ${johnDoe.SavingsAccountBalance}. Please select one of the following options. ");
             Console.WriteLine();
 
             var userHasChosenToQuit = false;
