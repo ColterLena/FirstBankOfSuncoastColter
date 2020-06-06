@@ -9,11 +9,13 @@ namespace FirstBankOfSuncoastColter
 {
     class Program
     {
-        class BankAccounts
+        class Transaction
         {
-            public double CheckingAccountBalance { get; set; }
+            public int Amount { get; set; }
 
-            public double SavingsAccountBalance { get; set; }
+            public string Type { get; set; }
+
+            public string Account { get; set; }
 
         }
         static string PromptForString(string prompt)
@@ -24,46 +26,35 @@ namespace FirstBankOfSuncoastColter
             return userInput;
         }
 
-        static double PromptForDouble(string prompt)
+        public static int PromptForInteger(string prompt)
         {
-            Console.Write(prompt);
-            double userInput;
-            var isThisGoodInput = double.TryParse(Console.ReadLine(), out userInput);
-
-            if (isThisGoodInput)
+            while (true)
             {
-                return userInput;
-            }
-            else
-            {
-                Console.WriteLine("Sorry, that isn't a valid input. I'm using 0 as your answer. ");
-                return 0;
+                Console.Write(prompt);
+                var userInput = 0;
 
+                var isThisGoodInput = Int32.TryParse(Console.ReadLine(), out userInput);
+
+                if (isThisGoodInput && userInput >= 0)
+                {
+                    return userInput;
+                }
+                else
+                {
+                    Console.WriteLine("Sorry, that isn't a valid input.");
+                }
             }
         }
 
         static void Main(string[] args)
         {
-            var johnDoe = new BankAccounts
-            {
-                CheckingAccountBalance = 500,
-                SavingsAccountBalance = 2000,
-            };
+            var streamReader = new StreamReader("transactions.csv");
+            var csvReader = new CsvReader(streamReader, CultureInfo.InvariantCulture);
 
-            var recallBankAccountsRecord = new List<double>();
-
-            if (File.Exists("bankAccountsRecordFile.csv"))
-            {
-                var reader = new StreamReader("bankAccountsRecordFile.csv");
-                var csvReader = new CsvReader(reader, CultureInfo.InvariantCulture);
-                csvReader.Configuration.HasHeaderRecord = false;
-                recallBankAccountsRecord = csvReader.GetRecords<double>().ToList();
-                johnDoe.CheckingAccountBalance = recallBankAccountsRecord[0];
-                johnDoe.SavingsAccountBalance = recallBankAccountsRecord[1];
-            }
+            var transactions = csvReader.GetRecords<Transaction>().ToList();
 
             Console.WriteLine();
-            Console.WriteLine($"Welcome John Doe to your bank account management system at the First Bank of Suncoast. Your current Checking Account balance is ${johnDoe.CheckingAccountBalance} and your current Savings Account balance is ${johnDoe.SavingsAccountBalance}. Please select one of the following options. ");
+            Console.WriteLine($"Welcome John Doe to your bank account management system at the First Bank of Suncoast. Please select one of the following options: ");
             Console.WriteLine();
 
             var userHasChosenToQuit = false;
@@ -87,97 +78,121 @@ namespace FirstBankOfSuncoastColter
 
                 if (choice == "S")
                 {
-                    var findCheckingAccountBalance = johnDoe.CheckingAccountBalance;
+                    var checkingDepositTransactionAmountsTotal = transactions.Where(transaction => transaction.Account == "Checking" && transaction.Type == "Deposit").Sum(transaction => transaction.Amount);
+                    var checkingWithdrawTransactionAmountsTotal = transactions.Where(transaction => transaction.Account == "Checking" && transaction.Type == "Withdraw").Sum(transaction => transaction.Amount);
 
-                    var findSavingsAccountBalance = johnDoe.SavingsAccountBalance;
+                    var savingsDepositTransactionAmountsTotal = transactions.Where(transaction => transaction.Account == "Savings" && transaction.Type == "Deposit").Sum(transaction => transaction.Amount);
+                    var savingsWithdrawTransactionAmountsTotal = transactions.Where(transaction => transaction.Account == "Savings" && transaction.Type == "Withdraw").Sum(transaction => transaction.Amount);
 
-                    Console.WriteLine($"Checking Account Balance: ${findCheckingAccountBalance}");
+                    var checkingAccountBalance = checkingDepositTransactionAmountsTotal - checkingWithdrawTransactionAmountsTotal;
+                    var savingsAccountBalance = savingsDepositTransactionAmountsTotal - savingsWithdrawTransactionAmountsTotal;
 
-                    Console.WriteLine($"Savings Account Balance: ${findSavingsAccountBalance}");
+                    Console.WriteLine($"Checking Account Balance: ${checkingAccountBalance}");
 
+                    Console.WriteLine($"Savings Account Balance: ${savingsAccountBalance}");
                 }
 
                 if (choice == "D")
                 {
-                    var findAccountBalance = johnDoe.CheckingAccountBalance;
-                    var depositAmount = PromptForDouble($"Your current Checking Account balance is ${findAccountBalance}. How much money would you like to deposit? ");
+                    var amount = PromptForInteger("How much would you like to deposit into Checking? ");
 
-                    if (depositAmount < 0)
+                    if (amount < 0)
                     {
                         Console.WriteLine($"Sorry, that's not a valid entry. ");
                     }
                     else
                     {
-                        var newAccountBalance = findAccountBalance + depositAmount;
+                        var newTransaction = new Transaction
+                        {
+                            Type = "Deposit",
+                            Account = "Checking",
+                            Amount = amount
+                        };
 
-                        johnDoe.CheckingAccountBalance = newAccountBalance;
-
-                        Console.WriteLine($"Here's your new Checking Account balance: ${newAccountBalance}. ");
+                        transactions.Add(newTransaction);
                     }
-
                 }
 
                 if (choice == "W")
                 {
-                    var findAccountBalance = johnDoe.CheckingAccountBalance;
-                    var withdrawlAmount = PromptForDouble($"Your current Checking Account balance is ${findAccountBalance}. How much money would you like to withdraw? ");
+                    var amount = PromptForInteger("How much would you like to withdraw from Checking? ");
 
-                    if (withdrawlAmount > findAccountBalance || withdrawlAmount < 0)
+                    var checkingDepositTransactionAmountsTotal = transactions.Where(transaction => transaction.Account == "Checking" && transaction.Type == "Deposit").Sum(transaction => transaction.Amount);
+                    var checkingWithdrawTransactionAmountsTotal = transactions.Where(transaction => transaction.Account == "Checking" && transaction.Type == "Withdraw").Sum(transaction => transaction.Amount);
 
+                    var checkingAccountBalance = checkingDepositTransactionAmountsTotal - checkingWithdrawTransactionAmountsTotal;
+
+                    if (amount > checkingAccountBalance || amount < 0)
                     {
                         Console.WriteLine("Sorry, you either don't have enough funds to withdraw that amount or the entry is invalid. ");
                     }
                     else
                     {
-                        var newAccountBalance = findAccountBalance - withdrawlAmount;
-                        johnDoe.CheckingAccountBalance = newAccountBalance;
-                        Console.WriteLine($"Here's you new Checking Account balance: ${newAccountBalance}. ");
+                        var newTransaction = new Transaction
+                        {
+                            Type = "Withdraw",
+                            Account = "Checking",
+                            Amount = amount
+                        };
+
+                        transactions.Add(newTransaction);
                     }
                 }
 
                 if (choice == "e")
                 {
-                    var findAccountBalance = johnDoe.SavingsAccountBalance;
-                    var depositAmount = PromptForDouble($"Your current Savings Account balance is ${findAccountBalance}. How much money would you like to deposit? ");
+                    var amount = PromptForInteger("How much would you like to deposit into Savings? ");
 
-                    if (depositAmount < 0)
+                    if (amount < 0)
                     {
                         Console.WriteLine($"Sorry, that's not a valid entry. ");
                     }
                     else
                     {
-                        var newAccountBalance = findAccountBalance + depositAmount;
-                        johnDoe.SavingsAccountBalance = newAccountBalance;
-                        Console.WriteLine($"Here's your new Savings Account balance: ${newAccountBalance}. ");
+                        var newTransaction = new Transaction
+                        {
+                            Type = "Deposit",
+                            Account = "Savings",
+                            Amount = amount
+                        };
+
+                        transactions.Add(newTransaction);
                     }
                 }
 
                 if (choice == "i")
                 {
-                    var findAccountBalance = johnDoe.SavingsAccountBalance;
-                    var withdrawlAmount = PromptForDouble($"Your current Savings Account balance is ${findAccountBalance}. How much money would you like to withdraw? ");
+                    var amount = PromptForInteger("How much would you like to withdraw from Savings? ");
 
-                    if (withdrawlAmount > findAccountBalance || withdrawlAmount < 0)
+                    var savingsDepositTransactionAmountsTotal = transactions.Where(transaction => transaction.Account == "Savings" && transaction.Type == "Deposit").Sum(transaction => transaction.Amount);
+                    var savingsWithdrawTransactionAmountsTotal = transactions.Where(transaction => transaction.Account == "Savings" && transaction.Type == "Withdraw").Sum(transaction => transaction.Amount);
+
+                    var savingsAccountBalance = savingsDepositTransactionAmountsTotal - savingsWithdrawTransactionAmountsTotal;
+
+                    if (amount > savingsAccountBalance || amount < 0)
 
                     {
                         Console.WriteLine("Sorry, you either don't have enough funds to withdraw that amount or the entry is invalid. ");
                     }
-
                     else
                     {
-                        var newAccountBalance = findAccountBalance - withdrawlAmount;
-                        johnDoe.SavingsAccountBalance = newAccountBalance;
-                        Console.WriteLine($"Here's you new Savings Account balance: ${newAccountBalance}. ");
-                    }
+                        var newTransaction = new Transaction
+                        {
+                            Type = "Withdraw",
+                            Account = "Savings",
+                            Amount = amount
+                        };
 
+                        transactions.Add(newTransaction);
+                    }
                 }
 
-                var saveBankAccountsRecord = new List<double>()
-                {johnDoe.CheckingAccountBalance, johnDoe.SavingsAccountBalance};
-                var fileWriter = new StreamWriter("bankAccountsRecordFile.csv");
-                var csvWriter = new CsvWriter(fileWriter, CultureInfo.InvariantCulture);
-                csvWriter.WriteRecords(saveBankAccountsRecord);
-                fileWriter.Close();
+                var streamWriter = new StreamWriter("transactions.csv");
+                var csvWriter = new CsvWriter(streamWriter, CultureInfo.InvariantCulture);
+
+                csvWriter.WriteRecords(transactions);
+
+                streamWriter.Close();
 
             }
         }
