@@ -20,8 +20,6 @@ The transaction information should be stored in a file, using a `CSV`(or `JSON`)
 
 Balances will be computed by determining the cumulative effect of all the transactions in order. For instance, if a user deposits 10 to their savings account and then withdraws 8 from their savings account, their balance is computed as 2.
 
-### Explorer Mode
-
 - [ ] The app should load past transactions from a file at start up.
 - [ ] As a user I should be able to see the balances in my saving and checking account when the program first starts.
 - [ ] Never allow withdrawing or depositing more money than allowed. That is, we cannot allow our accounts to go negative.
